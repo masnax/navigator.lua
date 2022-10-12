@@ -149,6 +149,28 @@ function M.call_sync(method, params, opts, handler)
   handler(err, extract_result(results_lsp), { method = method }, nil)
 end
 
+function M.call_sync_multi(methods, params, opts, handler)
+  all_results = {}
+  ctxs = {}
+  for _, method in pairs(methods) do
+    params = params or {}
+    opts = opts or {}
+    local results_lsp, err = lsp.buf_request_sync(0, method, params, opts.timeout or vim.g.navtator_timeout or 1000)
+    table.insert(all_results, extract_result(results_lsp))
+    if nvim_0_6_1 then
+      table.insert(ctxs, {method = method})
+    else
+      table.insert(ctxs, method)
+    end
+  end
+
+  if nvim_0_6_1 then
+    handler(err, all_results, ctxs, nil)
+  else
+    handler(err, ctxs, all_results, nil, nil)
+  end
+end
+
 function M.call_async(method, params, handler)
   params = params or {}
   local callback = function(...)
